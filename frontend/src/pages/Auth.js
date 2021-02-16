@@ -1,10 +1,12 @@
-import React, { useRef, useState } from "react";
+import React, { useContext, useRef, useState } from "react";
+import AuthContext from "../context/auth-context";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
 
   const emailEl = useRef("");
   const passwordEl = useRef("");
+  const authContext = useContext(AuthContext);
 
   const submitHandler = (event) => {
     event.preventDefault();
@@ -54,7 +56,14 @@ const Auth = () => {
         return res.json();
       })
       .then((resData) => {
-        console.log(resData);
+        // console.log(resData);
+        if (resData.data.login.token) {
+          authContext.login(
+            resData.data.login.userId,
+            resData.data.login.token,
+            resData.data.login.tokenExpiration
+          );
+        }
       })
       .catch((err) => {
         console.log(err);

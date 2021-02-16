@@ -3,21 +3,38 @@ import Auth from "./pages/Auth";
 import Events from "./pages/Events";
 import Bookings from "./pages/Bookings";
 import Navigation from "./components/Navigation";
+import AuthContext from "./context/auth-context";
+import { useState } from "react";
 
 function App() {
+  const [userId, setUserId] = useState(null);
+  const [token, setToken] = useState(null);
+
+  const login = (userId, token, tokenExpiration) => {
+    setUserId(userId);
+    setToken(token);
+  };
+  const logout = () => {
+    setUserId(null);
+    setToken(null);
+  };
   return (
     <BrowserRouter>
-      <>
+      <AuthContext.Provider
+        value={{ userId: userId, token: token, login: login, logout: logout }}
+      >
         <Navigation />
         <main className="main-content">
           <Switch>
-            <Redirect exact from="/" to="/auth" />
-            <Route path="/auth" component={Auth} />
+            {!token && <Redirect exact from="/" to="/auth" />}
+            {token && <Redirect exact from="/" to="/events" />}
+            {token && <Redirect exact from="/auth" to="/events" />}
+            {!token && <Route path="/auth" component={Auth} />}
             <Route path="/events" component={Events} />
-            <Route path="/bookings" component={Bookings} />
+            {token && <Route path="/bookings" component={Bookings} />}
           </Switch>
         </main>
-      </>
+      </AuthContext.Provider>
     </BrowserRouter>
   );
 }
