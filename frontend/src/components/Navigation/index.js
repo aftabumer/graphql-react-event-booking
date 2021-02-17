@@ -23,9 +23,12 @@ const Navigation = () => {
                   <NavLink to="/events">Events</NavLink>
                 </li>
                 {authContext.token && (
-                  <li>
-                    <NavLink to="/bookings">Bookings</NavLink>
-                  </li>
+                  <>
+                    <li>
+                      <NavLink to="/bookings">Bookings</NavLink>
+                    </li>
+                    <button onClick={authContext.logout}>Logout</button>
+                  </>
                 )}
               </ul>
             </nav>
