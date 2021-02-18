@@ -13,9 +13,9 @@ type Booking {
 type Event {
     _id: ID!
     title: String!
-    description: String!
     price: Float!
     date: String!
+    description: String!
     creator: User!
 }
 
@@ -34,9 +34,9 @@ type AuthData {
 
 input EventInput {
     title: String!
-    description: String!
     price: Float!
     date: String!
+    description: String!
 }
 
 input UserInput {
