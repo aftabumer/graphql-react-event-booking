@@ -1,5 +1,6 @@
 const Booking = require("../../models/booking");
 const Event = require("../../models/event");
+const user = require("../../models/user");
 const { transformEvent, transformBooking } = require("../resolvers/merge");
 
 module.exports = {
@@ -8,7 +9,7 @@ module.exports = {
       throw new Error("Unauthenticated");
     }
     try {
-      const bookings = await Booking.find();
+      const bookings = await Booking.find({ user: req.userId });
       return bookings.map((booking) => {
         return transformBooking(booking);
       });

@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
+import BookingList from "../components/Bookings/BookingList";
 import Spinner from "../components/Spinner";
 import AuthContext from "../context/auth-context";
 
@@ -7,6 +8,8 @@ const Bookings = () => {
 
   const [bookings, setBookings] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const token = authContext.token;
 
   useEffect(() => {
     fetchBookings();
@@ -30,8 +33,6 @@ const Bookings = () => {
       }
       `,
     };
-
-    const token = authContext.token;
 
     fetch("http://localhost:8000/graphql", {
       method: "POST",
@@ -58,20 +59,55 @@ const Bookings = () => {
       });
   };
 
+  const deleteBookingHandler = (bookingId) => {
+    setIsLoading(true);
+
+    const requestBody = {
+      query: `
+        mutation {
+          cancelBooking(bookingId: "${bookingId}") {
+            _id
+            title
+         }
+      }
+      `,
+    };
+
+    fetch("http://localhost:8000/graphql", {
+      method: "POST",
+      body: JSON.stringify(requestBody),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token,
+      },
+    })
+      .then((res) => {
+        if (res.status !== 200 && res.status !== 201) {
+          throw new Error("Failed!");
+        }
+        return res.json();
+      })
+      .then((resData) => {
+        setBookings(() => {
+          const updatedBooking = bookings.filter((booking) => {
+            return booking._id !== bookingId;
+          });
+          return updatedBooking, setIsLoading(false);
+        });
+        fetchBookings();
+      })
+      .catch((err) => {
+        console.log(err);
+        setIsLoading(false);
+      });
+  };
+
   return (
     <>
       {isLoading ? (
         <Spinner />
       ) : (
-        <ul>
-          {bookings &&
-            bookings.map((booking) => (
-              <li key={booking._id}>
-                {booking.event.title} -{" "}
-                {new Date(booking.createdAt).toLocaleDateString()}
-              </li>
-            ))}
-        </ul>
+        <BookingList bookings={bookings} onDelete={deleteBookingHandler} />
       )}
     </>
   );
