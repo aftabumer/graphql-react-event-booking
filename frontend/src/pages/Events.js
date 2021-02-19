@@ -1,6 +1,8 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
 import Backdrop from "../components/Backdrop";
+import EventList from "../components/Events/EventList";
 import Modal from "../components/Modal";
+import Spinner from "../components/Spinner";
 import AuthContext from "../context/auth-context";
 
 const Events = () => {
@@ -8,6 +10,9 @@ const Events = () => {
 
   const [creating, setCreating] = useState(false);
   const [events, setEvents] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState("");
+  const [viewDetailModal, setViewDetailModal] = useState(false);
 
   const titleEl = useRef("");
   const priceEl = useRef(0);
@@ -47,10 +52,6 @@ const Events = () => {
           price
           date
           description
-          creator {
-            _id
-            email
-          }
         }
       }
       `,
@@ -73,7 +74,20 @@ const Events = () => {
         return res.json();
       })
       .then((resData) => {
-        fetchEvents();
+        setEvents((prevState) => {
+          const updatedEvents = [...prevState];
+          updatedEvents.push({
+            _id: resData.data.createEvent._id,
+            title: resData.data.createEvent.title,
+            price: resData.data.createEvent.price,
+            date: resData.data.createEvent.date,
+            description: resData.data.createEvent.description,
+            creator: {
+              _id: authContext.userId,
+            },
+          });
+          return updatedEvents;
+        });
       })
       .catch((err) => {
         console.log(err);
@@ -81,6 +95,7 @@ const Events = () => {
   };
 
   const fetchEvents = () => {
+    setIsLoading(true);
     const requestBody = {
       query: `
       query {
@@ -115,21 +130,63 @@ const Events = () => {
       .then((resData) => {
         const events = resData.data.events;
         setEvents(events);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        console.log(err);
+        setIsLoading(false);
+      });
+  };
+
+  const showDetailHandler = (eventId) => {
+    setViewDetailModal(true);
+    setSelectedEvent(() => {
+      const selectedEvent = events.find((e) => e._id === eventId);
+      return selectedEvent;
+    });
+  };
+
+  const bookEventHandler = () => {
+    if (!authContext.token) {
+      setViewDetailModal(false);
+      return;
+    }
+
+    const requestBody = {
+      query: `
+         mutation {
+            bookEvent(eventId: "${selectedEvent._id}") {
+              _id
+              createdAt
+              updatedAt
+          }
+        }
+      `,
+    };
+
+    const token = authContext.token;
+
+    fetch("http://localhost:8000/graphql", {
+      method: "POST",
+      body: JSON.stringify(requestBody),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token,
+      },
+    })
+      .then((res) => {
+        if (res.status !== 200 && res.status !== 201) {
+          throw new Error("Failed!");
+        }
+        return res.json();
+      })
+      .then((resData) => {
+        console.log(resData);
+        setViewDetailModal(false);
       })
       .catch((err) => {
         console.log(err);
       });
-  };
-
-  const eventList = (events) => {
-    const list =
-      events &&
-      events.map((event) => (
-        <li key={event._id} className="events__list-item">
-          {event.title}
-        </li>
-      ));
-    return list;
   };
 
   return (
@@ -143,6 +200,7 @@ const Events = () => {
             canConfirm
             onCancel={() => setCreating(false)}
             onConfirm={modalConfirmHandler}
+            confirmText="Confirm"
           >
             <form>
               <div className="form-control">
@@ -165,6 +223,23 @@ const Events = () => {
           </Modal>
         </>
       )}
+      {viewDetailModal && (
+        <Modal
+          title={selectedEvent.title}
+          canCancel
+          canConfirm
+          onCancel={() => setViewDetailModal(false)}
+          onConfirm={bookEventHandler}
+          confirmText={authContext.token ? "Book" : "Confirm"}
+        >
+          <h1>{selectedEvent.title}</h1>
+          <h3 className="py2">
+            ${selectedEvent.price} -{" "}
+            {new Date(selectedEvent.date).toLocaleDateString()}
+          </h3>
+          <p>{selectedEvent.description}</p>
+        </Modal>
+      )}
       {authContext.token && (
         <div className="events-control">
           <button className="btn" onClick={() => setCreating(true)}>
@@ -172,7 +247,15 @@ const Events = () => {
           </button>
         </div>
       )}
-      <ul className="events__list">{eventList(events)}</ul>
+      {isLoading ? (
+        <Spinner />
+      ) : (
+        <EventList
+          events={events}
+          authUserId={authContext.userId}
+          onViewDetail={showDetailHandler}
+        />
+      )}
     </>
   );
 };
