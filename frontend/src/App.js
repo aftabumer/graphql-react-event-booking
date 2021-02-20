@@ -20,9 +20,7 @@ function App() {
   };
   return (
     <BrowserRouter>
-      <AuthContext.Provider
-        value={{ userId: userId, token: token, login: login, logout: logout }}
-      >
+      <AuthContext.Provider value={{ userId, token, login, logout }}>
         <Navigation />
         <main className="main-content">
           <Switch>

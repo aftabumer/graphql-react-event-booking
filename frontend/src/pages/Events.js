@@ -242,6 +242,7 @@ const Events = () => {
       )}
       {authContext.token && (
         <div className="events-control">
+          <p className="mb2">Share your own Events!</p>
           <button className="btn" onClick={() => setCreating(true)}>
             Create Event
           </button>
