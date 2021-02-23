@@ -45,8 +45,8 @@ const Events = () => {
 
     const requestBody = {
       query: `
-      mutation {
-        createEvent(eventInput: {title: "${title}", price: ${price}, date: "${date}", description: "${description}"}) {
+      mutation CreateEvent($title: String!, $price: Float!, $date: String!, $description: String!) {
+        createEvent(eventInput: {title: $title, price: $price, date: $date, description: $description}) {
           _id
           title
           price
@@ -55,6 +55,12 @@ const Events = () => {
         }
       }
       `,
+      variables: {
+        title: title,
+        price: price,
+        date: date,
+        description: description,
+      },
     };
 
     const token = authContext.token;
@@ -154,14 +160,17 @@ const Events = () => {
 
     const requestBody = {
       query: `
-         mutation {
-            bookEvent(eventId: "${selectedEvent._id}") {
+         mutation BookEvent($id: ID!) {
+            bookEvent(eventId: $id) {
               _id
               createdAt
               updatedAt
           }
         }
       `,
+      variables: {
+        id: selectedEvent._id,
+      },
     };
 
     const token = authContext.token;
